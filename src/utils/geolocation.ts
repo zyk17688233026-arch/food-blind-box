@@ -1,8 +1,34 @@
 import { Location } from '../types';
 import { useStore } from '../store';
 
-// 使用 OpenStreetMap Nominatim 免费 API 进行逆地理编码
+// 使用高德（优先）或 OpenStreetMap Nominatim（兜底）进行逆地理编码
 export const reverseGeocode = async (latitude: number, longitude: number) => {
+  const amapKey = useStore.getState().amapKey;
+
+  // 如果用户配置了高德 API Key，优先使用高德的高精度逆地理编码，速度秒出且不会被墙
+  if (amapKey) {
+    try {
+      const response = await fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${amapKey}&location=${longitude},${latitude}`);
+      const data = await response.json();
+      if (data.status === '1' && data.regeocode) {
+        const addressComponent = data.regeocode.addressComponent;
+        // 高德的 city 可能是空数组（比如直辖市北京、上海），此时取 province
+        const city = (typeof addressComponent.city === 'string' && addressComponent.city) 
+          ? addressComponent.city 
+          : addressComponent.province;
+          
+        return {
+          address: data.regeocode.formatted_address || '未知详细地址',
+          city: city || '未知城市',
+          district: (typeof addressComponent.district === 'string' && addressComponent.district) ? addressComponent.district : '未知区域'
+        };
+      }
+    } catch (e) {
+      console.error('Amap reverse geocoding failed, falling back to OSM...', e);
+    }
+  }
+
+  // 兜底：使用开源的 OSM 接口
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
       headers: {
