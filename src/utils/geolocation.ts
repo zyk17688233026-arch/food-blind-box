@@ -145,7 +145,9 @@ export const getCurrentPosition = (): Promise<Location> => {
         // 如果 HTML5 定位失败，转入 IP 兜底
         fallbackToIPLocation();
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      // 手机冷启动 GPS 经常需要 10 秒以上，5000ms 太短会导致直接失败
+      // 增加 timeout 到 15000ms，并允许使用 1 分钟内的缓存位置 (maximumAge)
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   });
 };
