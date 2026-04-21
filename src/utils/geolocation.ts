@@ -111,9 +111,23 @@ export const getCurrentPosition = (): Promise<Location> => {
     }
 
     // 在 HTTP 环境下（非 localhost 且非 HTTPS），现代浏览器会直接静默拦截 geolocation 请求
-    // 我们设置一个较短的超时时间，如果超时或者报错，立刻转 IP 定位
+    // 为了防止部分移动端浏览器在请求定位时既不报错也不返回（假死），我们加一个手动的 Promise.race 兜底超时
+    let isResolved = false;
+    
+    const timeoutId = setTimeout(() => {
+      if (!isResolved) {
+        console.warn('Geolocation manual timeout triggered, falling back to IP...');
+        isResolved = true;
+        fallbackToIPLocation();
+      }
+    }, 10000); // 10秒强制超时兜底
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        if (isResolved) return;
+        isResolved = true;
+        clearTimeout(timeoutId);
+        
         const { latitude, longitude } = position.coords;
         try {
           const addressInfo = await reverseGeocode(latitude, longitude);
@@ -129,6 +143,10 @@ export const getCurrentPosition = (): Promise<Location> => {
         }
       },
       (error) => {
+        if (isResolved) return;
+        isResolved = true;
+        clearTimeout(timeoutId);
+        
         let errorMessage = '获取位置失败，请重试';
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -145,9 +163,9 @@ export const getCurrentPosition = (): Promise<Location> => {
         // 如果 HTML5 定位失败，转入 IP 兜底
         fallbackToIPLocation();
       },
-      // 手机冷启动 GPS 经常需要 10 秒以上，5000ms 太短会导致直接失败
-      // 增加 timeout 到 15000ms，并允许使用 1 分钟内的缓存位置 (maximumAge)
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      // 手机端如果开启高精度定位，经常会导致部分安卓或 iOS 设备假死不返回
+      // 关闭 enableHighAccuracy 可以大大提高定位成功率和速度
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
   });
 };
