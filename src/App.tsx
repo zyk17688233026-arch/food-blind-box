@@ -7,8 +7,11 @@ import { HistoryPage } from './pages/History';
 import { MapPickerPage } from './pages/MapPicker';
 
 function App() {
+  // 从 Vite 环境变量中读取 base 路径（对应 vite.config.ts 里的 base 配置）
+  const basename = import.meta.env.BASE_URL;
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <div className="font-sans antialiased text-gray-900 selection:bg-orange-100 selection:text-orange-900">
         <AnimatePresence mode="wait">
           <Routes>
