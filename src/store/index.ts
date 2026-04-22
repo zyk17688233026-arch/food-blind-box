@@ -51,7 +51,8 @@ export const useStore = create<AppState>()(
       setCurrentResult: (result) => set({ currentResult: result }),
 
       amapKey: null,
-      setAmapKey: (key) => set({ amapKey: key }),
+      // 手机端复制粘贴极容易在开头或结尾带入不可见的空格，导致高德拒绝请求，这里强制去掉两端空格
+      setAmapKey: (key) => set({ amapKey: key ? key.trim() : null }),
     }),
     {
       name: 'food-blind-box-storage', // 存储到 localStorage 的 key

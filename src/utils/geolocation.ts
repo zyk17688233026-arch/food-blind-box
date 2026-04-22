@@ -22,9 +22,16 @@ export const reverseGeocode = async (latitude: number, longitude: number) => {
           city: city || '未知城市',
           district: (typeof addressComponent.district === 'string' && addressComponent.district) ? addressComponent.district : '未知区域'
         };
+      } else if (data.status === '0') {
+        // 如果高德明确返回错误（如 Key 错误、类型不匹配），直接抛出异常，不再静默兜底，避免用户被蒙在鼓里
+        throw new Error(`高德API报错: ${data.info} (请检查是否申请了"Web服务"类型的Key，而不是"Web端(JS API)")`);
       }
-    } catch (e) {
-      console.error('Amap reverse geocoding failed, falling back to OSM...', e);
+    } catch (e: any) {
+      console.error('Amap reverse geocoding failed:', e);
+      if (e.message && e.message.includes('高德API报错')) {
+        throw e; // 如果是明确的 API 错误，直接向上抛出显示在界面上
+      }
+      console.warn('Falling back to OSM...');
     }
   }
 
