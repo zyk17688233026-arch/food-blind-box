@@ -50,7 +50,9 @@ export const useStore = create<AppState>()(
       currentResult: null,
       setCurrentResult: (result) => set({ currentResult: result }),
 
-      amapKey: null,
+      // 这里直接硬编码一个默认的高德 Key，这样即使是朋友第一次打开（localStorage 为空），也能直接享受高德的服务
+      // 他们也可以在设置里覆盖这个 Key
+      amapKey: 'b36c641a99d45e7514bf22c06927f805',
       setAmapKey: (key) => set({ amapKey: key }),
     }),
     {
@@ -63,6 +65,14 @@ export const useStore = create<AppState>()(
         currentLocation: state.currentLocation,
         amapKey: state.amapKey
       }),
+      // 处理由于之前的缓存可能存了 null 的情况，确保它 fallback 到默认的 Key
+      merge: (persistedState: any, currentState) => {
+        return {
+          ...currentState,
+          ...persistedState,
+          amapKey: persistedState.amapKey || 'b36c641a99d45e7514bf22c06927f805',
+        };
+      }
     }
   )
 );
