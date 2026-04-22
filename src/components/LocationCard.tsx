@@ -57,8 +57,24 @@ export const LocationCard: React.FC = () => {
               <span className="text-sm font-medium">定位中...</span>
             </div>
           ) : error ? (
-            <span className="text-sm font-medium text-red-500 truncate block mt-1" onClick={handleRetry}>
-              {error} (点击重试)
+            <span 
+              className="text-xs font-medium text-red-500 block mt-1 whitespace-normal break-words" 
+              onClick={(e) => {
+                e.stopPropagation();
+                alert(`详细报错信息:\n\n${error}\n\n请检查设置或重试。`);
+              }}
+            >
+              {error.length > 25 ? `${error.substring(0, 25)}... (点击查看详情)` : error}
+            </span>
+          ) : currentLocation?.address?.startsWith('解析失败') ? (
+            <span 
+              className="text-xs font-medium text-red-500 block mt-1 whitespace-normal break-words pr-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                alert(`详细报错信息:\n\n${currentLocation.address}\n\n请检查您的高德Key是否为"Web服务"类型，并且没有包含空格。`);
+              }}
+            >
+              {currentLocation.address.length > 25 ? `${currentLocation.address.substring(0, 25)}... (点击查看详情)` : currentLocation.address}
             </span>
           ) : (
             <h3 className="text-sm font-medium text-gray-800 truncate block mt-1 pr-2">
