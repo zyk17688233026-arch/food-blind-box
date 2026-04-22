@@ -165,11 +165,13 @@ export const getCurrentPosition = (): Promise<Location> => {
         try {
           const addressInfo = await reverseGeocode(latitude, longitude);
           resolve({ latitude, longitude, ...addressInfo });
-        } catch (err) {
+        } catch (err: any) {
+          // 如果逆地理编码失败，我们把具体的错误信息附加到 address 字段里返回
+          const errorMsg = err.message ? err.message : '未知错误';
           resolve({
             latitude,
             longitude,
-            address: '定位成功，但地址解析失败',
+            address: `解析失败: ${errorMsg}`,
             city: '未知城市',
             district: '未知区域'
           });
